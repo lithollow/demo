@@ -1,0 +1,37 @@
+spring:
+  application:
+    name: ai-customer-service
+  datasource:
+    url: jdbc:h2:mem:ai_cs;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+
+server:
+  port: ${PORT:8080}
+  error:
+    include-message: never
+
+ai:
+  llm:
+    enabled: ${AI_LLM_ENABLED:false}
+    api-key: ${OPENAI_API_KEY:}
+    base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
+    model-name: ${OPENAI_MODEL:gpt-4.1-mini}
+    timeout: 20s
+  customer-service:
+    max-message-length: 2000
+    refund-review-threshold: 500.00
+
+logging:
+  level:
+    root: INFO
+    com.example.aicsupport: INFO
+

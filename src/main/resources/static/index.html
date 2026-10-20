@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Aster AI 客服工作台</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">跳到主要内容</a>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-lockup">
+        <span class="brand-mark" aria-hidden="true">A</span>
+        <div>
+          <p class="eyebrow">Aster Service Cloud</p>
+          <h1>AI 客服工作台</h1>
+        </div>
+      </div>
+      <div class="topbar-tools">
+        <label class="identity-field" for="actor-select">
+          <span>演示身份</span>
+          <select id="actor-select" autocomplete="off">
+            <option value="cust-alice">爱丽丝 · 客户</option>
+            <option value="cust-bob">鲍勃 · 客户</option>
+            <option value="agent-lin">林客服 · 客服</option>
+            <option value="admin">审计管理员 · 管理员</option>
+          </select>
+        </label>
+        <span id="api-status" class="status-pill" role="status">已连接</span>
+      </div>
+    </header>
+
+    <div class="workspace">
+      <aside class="rail" aria-label="工作区导航">
+        <nav class="nav-tabs" aria-label="功能">
+          <button class="nav-tab active" type="button" data-view="chat" aria-selected="true">
+            <span class="nav-icon" aria-hidden="true">01</span>
+            <span>客服对话</span>
+          </button>
+          <button class="nav-tab" type="button" data-view="handoffs" aria-selected="false">
+            <span class="nav-icon" aria-hidden="true">02</span>
+            <span>工单工作台</span>
+          </button>
+          <button class="nav-tab" type="button" data-view="audit" aria-selected="false">
+            <span class="nav-icon" aria-hidden="true">03</span>
+            <span>审计与评测</span>
+          </button>
+        </nav>
+        <div class="rail-note">
+          <p class="rail-note-title">演示环境</p>
+          <p>身份来自 <code>X-User-Id</code>，生产环境应替换为 OIDC 或网关签名身份。</p>
+        </div>
+      </aside>
+
+      <main id="main-content" class="main-area">
+        <section id="chat-view" class="view-panel active" aria-labelledby="chat-heading">
+          <div class="conversation-column">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Conversation</p>
+                <h2 id="chat-heading">客户对话</h2>
+              </div>
+              <button id="new-conversation" class="button secondary" type="button">新建会话</button>
+            </div>
+
+            <div id="chat-alert" class="inline-alert hidden" role="alert"></div>
+
+            <div class="chat-surface">
+              <div id="message-list" class="message-list" aria-live="polite" aria-label="对话消息">
+                <div class="empty-state">
+                  <span class="empty-symbol" aria-hidden="true">↗</span>
+                  <h3>从一句具体的问题开始</h3>
+                  <p>可以查询订单、工单，发起退款，或直接要求转人工。</p>
+                </div>
+              </div>
+
+              <div class="quick-actions" aria-label="快捷示例">
+                <button type="button" class="chip" data-message="我的订单 ORD-1001 到哪了？">查订单</button>
+                <button type="button" class="chip" data-message="查一下工单 TCK-3001 的处理进度">查工单</button>
+                <button type="button" class="chip" data-message="我要退款">申请退款</button>
+                <button type="button" class="chip" data-message="请帮我转人工客服">转人工</button>
+              </div>
+
+              <form id="chat-form" class="composer">
+                <label class="sr-only" for="message-input">输入消息</label>
+                <textarea id="message-input" rows="2" maxlength="2000"
+                          placeholder="描述你的问题，例如：我的订单 ORD-1001 到哪了？"
+                          aria-describedby="composer-hint"></textarea>
+                <div class="composer-actions">
+                  <span id="composer-hint" class="composer-hint">Enter 发送 · Shift + Enter 换行</span>
+                  <button id="send-button" class="button primary" type="submit">发送</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <aside class="inspector" aria-labelledby="inspector-heading">
+            <div class="inspector-heading">
+              <p class="eyebrow">Live trace</p>
+              <h2 id="inspector-heading">本轮处理轨迹</h2>
+            </div>
+            <dl class="facts">
+              <div><dt>会话</dt><dd id="fact-conversation">未开始</dd></div>
+              <div><dt>意图</dt><dd id="fact-intent">—</dd></div>
+              <div><dt>置信度</dt><dd id="fact-confidence">—</dd></div>
+              <div><dt>状态</dt><dd id="fact-status">—</dd></div>
+              <div><dt>待办动作</dt><dd id="fact-pending">—</dd></div>
+              <div><dt>退款单</dt><dd id="fact-refund">—</dd></div>
+              <div><dt>人工工单</dt><dd id="fact-handoff">—</dd></div>
+            </dl>
+            <div class="trace-block">
+              <h3>任务计划</h3>
+              <ol id="plan-list" class="trace-list"><li class="muted">暂无计划</li></ol>
+            </div>
+            <div class="trace-block">
+              <h3>工具调用</h3>
+              <ul id="tool-list" class="trace-list"><li class="muted">暂无工具调用</li></ul>
+            </div>
+            <div id="validation-block" class="validation-block">
+              <h3>结果校验</h3>
+              <p id="validation-copy" class="muted">等待本轮结果</p>
+            </div>
+          </aside>
+        </section>
+
+        <section id="handoffs-view" class="view-panel" aria-labelledby="handoffs-heading" hidden>
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Human fallback</p>
+              <h2 id="handoffs-heading">人工工单</h2>
+            </div>
+            <button id="refresh-handoffs" class="button secondary" type="button">刷新工单</button>
+          </div>
+          <div id="handoff-alert" class="inline-alert hidden" role="alert"></div>
+          <div id="handoff-list" class="card-list" aria-live="polite">
+            <div class="empty-state compact">
+              <h3>切换到客服或管理员身份</h3>
+              <p>客户账号无法访问人工工单列表。</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="audit-view" class="view-panel" aria-labelledby="audit-heading" hidden>
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Governance</p>
+              <h2 id="audit-heading">权限审计与评测</h2>
+            </div>
+          </div>
+          <div id="audit-alert" class="inline-alert hidden" role="alert"></div>
+          <div class="audit-grid">
+            <article class="audit-card">
+              <div class="card-heading">
+                <div>
+                  <p class="eyebrow">Audit log</p>
+                  <h3>权限审计</h3>
+                </div>
+                <form id="audit-form" class="inline-form">
+                  <label class="sr-only" for="audit-resource">资源 ID</label>
+                  <input id="audit-resource" type="text" placeholder="资源 ID，如 ORD-1001">
+                  <button class="button secondary" type="submit">查询</button>
+                </form>
+              </div>
+              <div id="audit-list" class="data-list" aria-live="polite">
+                <p class="muted">仅管理员可读取审计日志。</p>
+              </div>
+            </article>
+            <article class="audit-card">
+              <div class="card-heading">
+                <div>
+                  <p class="eyebrow">Evaluation</p>
+                  <h3>回归评测</h3>
+                </div>
+                <button id="run-evaluation" class="button primary" type="button">运行评测</button>
+              </div>
+              <div id="evaluation-report" class="evaluation-report" aria-live="polite">
+                <p class="muted">运行一组离线场景，验证意图、工具、人工兜底与结果校验。</p>
+              </div>
+            </article>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="/app.js" defer></script>
+</body>
+</html>

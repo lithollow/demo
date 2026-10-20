@@ -15,14 +15,16 @@
 
 子 agent 的最终答复会整体交回父 agent，因此每个子 agent 必须假设"父 agent 只看到你这一条消息"：把结论、证据、未完成项都写在最终答复里，不要藏在思考过程中。
 
-## 1. 项目现状（不要高估它）
+## 1. 项目现状
 
-本仓库目前是一个**协同配置骨架**：只有 `config.toml` 与 `agents/*.toml`，没有业务源码、没有构建脚本、没有测试。
+本仓库现已包含可运行的 **Spring Boot 3.5.16 + LangChain4j 1.22.0 AI 客服**：
 
-因此：
+- 后端源码在 `src/main/java`，前端静态资源在 `src/main/resources/static`；
+- H2 内存库与 Flyway 迁移在 `src/main/resources/db`；
+- 自动化测试在 `src/test`；
+- 规划、接口契约与验证记录在 `docs/`，使用说明在 `README.md`。
 
-- 本文件规定的是**流程与证据契约**，不是技术栈实现细节；
-- §7 的验证命令表在首次落地代码时补齐。**在命令被真实写入本文件之前，任何人不得假想、编造或"猜一个"构建/测试命令**，也不得把"看起来没问题"当作验证结论。
+当前默认使用离线规则模式，外部 LLM 为可选增强。验证结论必须来自真实命令输出；未运行的检查一律写“未验证”。
 
 ## 2. 角色与权限（唯一权威表）
 
@@ -93,17 +95,17 @@
 
 ## 7. 验证命令
 
-> 本表当前为**占位**。落地技术栈时由 `planner` 提交、`root` 写入，并保证每条命令在干净环境可复现。
-
 | 用途 | 命令 | 通过判据 | 状态 |
 | --- | --- | --- | --- |
-| 安装依赖 | 待补 | 退出码 0 | 未定义 |
-| 静态检查 | 待补 | 退出码 0，无新增告警 | 未定义 |
-| 单元测试 | 待补 | 全绿 | 未定义 |
-| 端到端/冒烟 | 待补 | 关键路径通过 | 未定义 |
+| 安装依赖 | `mvn -q -DskipTests dependency:go-offline` | 退出码 0 | 已定义（首次构建需要网络） |
+| 后端编译 | `mvn -q -DskipTests compile` | 退出码 0 | 已验证 |
+| 前端静态检查 | `node --check src/main/resources/static/app.js` | 退出码 0 | 已验证 |
+| 单元/集成测试 | `mvn -q test` | 全绿；当前 24 个测试、0 失败 | 已验证 |
+| 可执行包 | `mvn -q package` | 退出码 0，生成 `target/ai-customer-service-0.1.0-SNAPSHOT.jar` | 已验证 |
+| HTTP 冒烟 | 启动 `java -jar target/ai-customer-service-0.1.0-SNAPSHOT.jar --server.port=18080`，再执行 `curl -fsS http://127.0.0.1:18080/` 与 `POST /api/chat` | 首页 200；聊天返回 `validation.passed=true` | 已验证 |
 | 协同配置自检 | `CODEX_HOME=<本目录> codex exec --skip-git-repo-check "hi"`，检查输出中**没有** `malformed agent role` 警告 | 无该警告 | 已定义 |
 
-最后一条用于验证 `agents/*.toml` 能被 Codex 正确解析，详见 §11。
+跨进程验证 `POST /api/admin/evaluations/run` 后，应再次查单确认可退金额未被评测污染。最后一条用于验证 `agents/*.toml` 能被 Codex 正确解析，详见 §11。
 
 ## 8. 并发与生命周期
 
